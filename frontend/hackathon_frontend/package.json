@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-fetch-streams": "^1.1.2",
+    "react-use-websocket": "^4.13.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
