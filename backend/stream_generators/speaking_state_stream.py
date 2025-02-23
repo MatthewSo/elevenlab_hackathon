@@ -1,5 +1,4 @@
 from backend.models.speaking_state_data import SpeakingStateData
-from backend.models.spoken_language_data import SpokenLanguageData
 import time
 import asyncio
 import json
