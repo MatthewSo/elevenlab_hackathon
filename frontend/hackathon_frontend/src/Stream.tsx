@@ -12,6 +12,7 @@ type SentenceData = {
     timestamp: number;
     speaker: string;
     alert: boolean;
+    color: string;
 }
 
 // Asynchronous generator function that yields decoded data chunks
@@ -88,7 +89,7 @@ const StreamComponent: React.FC = () => {
                 {data.map(s => {
                         return (
                           <div className="w-full text-left" key={`${Math.random() * 100000}`}>
-                            <span className="inline text-xl w-full" key={`${Math.random()  * 10000}`} style={{ backgroundColor: gethighlightColor() }}> { s.sentence_text } </span> 
+                            <span className="inline text-xl w-full" key={`${Math.random()  * 10000}`} style={{ backgroundColor: gethighlightColor(s.color) }}> { s.sentence_text } </span> 
                             <br />
                           </div>
                         )
@@ -103,10 +104,14 @@ const StreamComponent: React.FC = () => {
 
 export default StreamComponent;
 
-const gethighlightColor = () => {
+const gethighlightColor = (c: string) => {
+    if (c === "red") {
+        return "#ff7c6b" // red
+    }
+    if (c === "yellow") {
+        return "#f8ff6b" // yellow
+    }
     return "#89ff6b" // green
-    return "#f8ff6b" // yellow
-    return "#ff7c6b" // red
 }
 
 /*

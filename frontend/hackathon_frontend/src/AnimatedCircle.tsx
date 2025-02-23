@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const AnimatedCircle = ({ active }: { active: boolean }) => {
+const AnimatedCircle = ({ active, color }: { active: boolean; color: string }) => {
   const [showAnimated, setShowAnimated] = useState(active);
   const [isClicked, setIsClicked] = useState(false)
 
@@ -37,7 +37,7 @@ const AnimatedCircle = ({ active }: { active: boolean }) => {
           width: 100%;
           height: 100%;
           border-radius: 50%;
-          background-color: #a0c9ed;
+          background-color: ${getColor(color)};
           transition: opacity 0.5s ease-in-out;
           cursor: pointer;
         }
@@ -76,3 +76,10 @@ const AnimatedCircle = ({ active }: { active: boolean }) => {
 };
 
 export default AnimatedCircle;
+
+const getColor = (c: string) => {
+    if (c === "blue") {
+        return "#a0c9ed"
+    }
+    return "#FF0000"
+}

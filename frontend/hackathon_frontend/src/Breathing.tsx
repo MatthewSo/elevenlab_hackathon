@@ -30,6 +30,7 @@ async function* streamingFetch(url: RequestInfo, init?: RequestInit): AsyncGener
 
 export const Breathing = () => {
   const [isBreathing, setIsBreathing] = useState(false);
+  const [color, setColor] = useState("blue")
 
   useEffect(() => {
     let isCancelled = false;
@@ -47,7 +48,8 @@ export const Breathing = () => {
           if (!match || !match[1]) throw new Error("match not found for JSON parse")
 
           const state: SpeakingState = JSON.parse(match[1]);
-          setIsBreathing(state.is_speaking.toLowerCase() === "true");
+          setIsBreathing(state.is_moving.toLowerCase() === "true");
+          setColor(state.color)
         }
       } catch (error) {
         console.error('Error while streaming:', error);
@@ -59,5 +61,5 @@ export const Breathing = () => {
     };
   }, []);
 
-    return <AnimatedCircle active={isBreathing} />
+    return <AnimatedCircle active={isBreathing} color={color}/>
 }
