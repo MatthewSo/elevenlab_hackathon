@@ -186,31 +186,40 @@ async def speaking_language_data_stream(request: Request):
 
     async def event_generator():
         idx = 0
+        SPEAKER_GLOBAL_STATE.append(
+            SpeakingStateData(
+                is_speaking="True",
+                is_listening="False",
+                color="blue",
+                is_moving="True",
+                timestamp=time.time(),
+            )
+        )
         while True:
             if idx < len(SPEAKER_GLOBAL_STATE):
                 data = SPEAKER_GLOBAL_STATE[idx]
-                SPEAKER_GLOBAL_STATE.append(
-                    SpeakingStateData(
-                        is_speaking="True",
-                        is_listening="False",
-                        color="blue",
-                        is_moving="True",
-                        timestamp=time.time(),
-                    )
-                )
+                # SPEAKER_GLOBAL_STATE.append(
+                #     SpeakingStateData(
+                #         is_speaking="True",
+                #         is_listening="False",
+                #         color="blue",
+                #         is_moving="True",
+                #         timestamp=time.time(),
+                #     )
+                # )
 
                 idx += 1
 
                 json_str = json.dumps(asdict(data))
-                SPEAKER_GLOBAL_STATE.append(
-                    SpeakingStateData(
-                        is_speaking="True",
-                        is_listening="False",
-                        color="blue",
-                        is_moving="False",
-                        timestamp=time.time(),
-                    )
-                )
+                # SPEAKER_GLOBAL_STATE.append(
+                #     SpeakingStateData(
+                #         is_speaking="True",
+                #         is_listening="False",
+                #         color="blue",
+                #         is_moving="False",
+                #         timestamp=time.time(),
+                #     )
+                # )
                 yield f"data: {json_str}\n\n"
             else:
                 # No new data yet, wait a bit
@@ -250,28 +259,19 @@ async def high_alert_explanation(request: Request):
     print("high alert POST called!")
     if HIGH_ALERT_AUDIO_MAP:
         sentence_id, audio = HIGH_ALERT_AUDIO_MAP.popitem()
-        SPEAKER_GLOBAL_STATE.append(
-            SpeakingStateData(
-                is_speaking="True",
-                is_listening="False",
-                color="red",
-                is_moving="True",
-                timestamp=time.time(),
-            )
-        )
         play(audio)
-
-        del HIGH_ALERT_AUDIO_MAP[sentence_id]
 
         SPEAKER_GLOBAL_STATE.append(
             SpeakingStateData(
                 is_speaking="False",
                 is_listening="False",
-                color="green",
+                color="blue",
                 is_moving="False",
                 timestamp=time.time(),
             )
         )
+
+    HIGH_ALERT_AUDIO_MAP.clear()
 
     ###############################################################################
 
@@ -313,6 +313,7 @@ socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 
 def process_high_alert_task_queue():
+    global high_alert_task_queue
     while True:
         sentence_id, text, evaluation = high_alert_task_queue.get()
         if is_alertable(evaluation):
@@ -323,9 +324,21 @@ def process_high_alert_task_queue():
             audio = ELEVEN_LABS_SPEECH_GENERATOR.generate_speech(explanation)
             HIGH_ALERT_AUDIO_MAP[sentence_id] = audio
 
+            SPEAKER_GLOBAL_STATE.append(
+                SpeakingStateData(
+                    is_speaking="True",
+                    is_listening="False",
+                    color="red",
+                    is_moving="True",
+                    timestamp=time.time(),
+                )
+            )
+
             print(f"Finished processing high alert for text: {text}")
 
         high_alert_task_queue.task_done()
+        high_alert_task_queue.queue.clear()
+        high_alert_task_queue = Queue()
 
 
 # Start a thread to process the task queue

@@ -55,7 +55,7 @@ const StreamComponent: React.FC = () => {
           if (!match || !match[1]) throw new Error("match not found for JSON parse")
 
           const sentence: SentenceData = JSON.parse(match[1]);
-          console.log(sentence)
+          // console.log(sentence)
           setData(prev => [...prev, sentence]);
         }
       } catch (error) {
@@ -111,7 +111,9 @@ const gethighlightColor = (c: string) => {
     if (c === "yellow") {
         return "#f8ff6b" // yellow
     }
-    return "#89ff6b" // green
+    if (c === "green") {
+      return "#89ff6b" // green
+    }
 }
 
 /*

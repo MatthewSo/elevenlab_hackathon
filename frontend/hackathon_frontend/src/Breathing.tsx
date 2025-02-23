@@ -50,6 +50,8 @@ export const Breathing = () => {
           const state: SpeakingState = JSON.parse(match[1]);
           setIsBreathing(state.is_moving.toLowerCase() === "true");
           setColor(state.color)
+
+          console.log(state)
         }
       } catch (error) {
         console.error('Error while streaming:', error);
@@ -61,5 +63,5 @@ export const Breathing = () => {
     };
   }, []);
 
-    return <AnimatedCircle active={isBreathing} color={color}/>
+    return <AnimatedCircle active={true} color={color}/>
 }

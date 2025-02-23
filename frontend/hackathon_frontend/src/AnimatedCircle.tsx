@@ -63,9 +63,9 @@ const AnimatedCircle = ({ active, color }: { active: boolean; color: string }) =
           }
         }
           @keyframes colorChange {
-            0% { background-color: #a0c9ed; }
-            50% { background-color:rgb(112, 177, 235); }
-            100% { background-color: #a0c9ed; }
+            0% { background-color: ${ getColor(color) } };
+            50% { background-color: ${ color === "blue" ? "rgb(112, 177, 235)" : "rgb(175, 84, 88)" } };
+            100% { background-color: ${ getColor(color)} };
         }
       `}</style>
       
@@ -81,5 +81,5 @@ const getColor = (c: string) => {
     if (c === "blue") {
         return "#a0c9ed"
     }
-    return "#FF0000"
+    return "#ff7c6b"
 }
