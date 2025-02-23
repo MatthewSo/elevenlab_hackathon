@@ -1,5 +1,7 @@
 from backend.llm.interface.statement_evaluator import StatementEvaluation
 
+# - Consequentiality: How important is the statement in the context of the background information? [0.0 to 1.0]
+
 
 def get_evaluation_context(background_info: str, statement: str):
     context = """You are an intelligent system that must evaluate how correct/true facts are based on a given background of knowledge.
@@ -8,7 +10,8 @@ The statement might not be at all relevant to the background information, but yo
 You may use your own knowledge to evaluate a statement, but should defer to the background information if it contradicts your knowledge.
 
 You will be asked to rank the statement on the following scales, with each criterion rated on a numerical scale from 0 to 1:
-- Consequentiality: How important is the statement in the context of the background information? [0.0 to 1.0]
+
+- Consequentiality: Evaluates the significance of the statement in terms of its impact and relevance to broader contexts or long-term outcomes. How much does the statement influence or shape the grand scheme of things? [0.0 to 1.0]
 - Factualness: How true is the statement in the context of the background information? [0.0 to 1.0]
 - Controversiality: How controversial is the statement in the context of the background information? [0.0 to 1.0]
 - Confidence: How confident are you in your evaluation of the statement? [0.0 to 1.0]
@@ -19,13 +22,14 @@ You must ONLY provide your response in valid JSON format. Your answer will be im
 - {"consequential_idx": 0.5, "factuality_idx": 0.0, "controversial_idx": 0.5, "confidence_idx": 0.5}
 
 Qualifiers, like "I think" or "I believe" in the statement can be ignored. You should evaluate the statement as if it were a fact.
+
 Here are some examples of statements you might be asked to evaluate with the scores you might give:
 - "The sky is blue" - {"consequential_idx": 0.2, "factuality_idx": 1.0, "controversial_idx": 0.1, "confidence_idx": 1.0}
 - "The sky is green" - {"consequential_idx": 0.2, "factuality_idx": 0.0, "controversial_idx": 0.9, "confidence_idx": 0.2}
 - "I think the sky is green" - {"consequential_idx": 0.2, "factuality_idx": 0.0, "controversial_idx": 0.9, "confidence_idx": 0.2}
 - "Pizza was invented in Italy" - {"consequential_idx": 0.2, "factuality_idx": 1.0, "controversial_idx": 0.1, "confidence_idx": 1.0}
 - "Pizza was invented in China" - {"consequential_idx": 0.2, "factuality_idx": 0.0, "controversial_idx": 0.9, "confidence_idx": 0.2}
-- "The Government is run by aliens" - {"consequential_idx": 0.2, "factuality_idx": 0.0, "controversial_idx": 0.9, "confidence_idx": 1.0}
+- "The Government is run by aliens" - {"consequential_idx": 0.5, "factuality_idx": 0.0, "controversial_idx": 0.9, "confidence_idx": 1.0}
 - "The COVID-19 vaccine is safe" - {"consequential_idx": 1.0, "factuality_idx": 1.0, "controversial_idx": 0.1, "confidence_idx": 1.0}
 - "The COVID-19 vaccine gives you autism" - {"consequential_idx": 1.0, "factuality_idx": 0.0, "controversial_idx": 0.9, "confidence_idx": 1.0}
 """
@@ -55,7 +59,7 @@ You have already evaluated the statement based on the background information and
 You may use your own knowledge to evaluate a statement, but should defer to the background information if it contradicts your knowledge.
 
 You have already ranked the statement on the following scales, with each criterion rated on a numerical scale from 0 to 1:
-- Consequentiality: How important is the statement in the context of the background information? [0.0 to 1.0]
+- Consequentiality: Evaluates the significance of the statement in terms of its impact and relevance to broader contexts or long-term outcomes. How much does the statement influence or shape the grand scheme of things? [0.0 to 1.0]
 - Factualness: How true is the statement in the context of the background information? [0.0 to 1.0]
 - Controversiality: How controversial is the statement in the context of the background information? [0.0 to 1.0]
 - Confidence: How confident are you in your evaluation of the statement? [0.0 to 1.0]

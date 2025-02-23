@@ -17,4 +17,4 @@ class ElevenLabsSpeechGenerator(SpeechGenerator):
             output_format="mp3_44100_128",
         )
 
-        play(audio)
+        return audio

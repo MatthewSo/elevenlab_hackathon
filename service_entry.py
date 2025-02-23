@@ -5,11 +5,15 @@ import json
 from dataclasses import asdict
 from backend.llm.mistral_statement_evaluator import MistralStatementEvaluator
 from backend.stream_generators.speaking_state_stream import stream_speaking_state_data
-
+from backend.voice.elevenlabs_speech_generator import ElevenLabsSpeechGenerator
+from elevenlabs import play
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from backend.models.spoken_language_data import SpokenLanguageData
 import hashlib
+import threading
+from queue import Queue
+
 
 import socketio  # pip install "python-socketio[asgi]"
 from deepgram import (
@@ -23,7 +27,7 @@ from deepgram import (
 # SHARED GLOBAL STATE
 ###############################################################################
 TRANSCRIPTION_GLOBAL_STATE = []
-HIGH_ALERT_EXPLANATION_MAP = {}
+HIGH_ALERT_AUDIO_MAP = {}
 TRANSCRIPTION_EVALUATION_MAP = {}
 TRANSCRIPTION_TEXT_MAP = {}
 
@@ -39,11 +43,18 @@ deepgram = DeepgramClient(API_KEY, config)
 
 dg_connection = None
 
+# Initialize a task queue
+high_alert_task_queue = Queue()
+
 
 # If the transcript is worth alerting, then add it to the global state to be explained,
 # and then generate an eleven labs audio file.
 def is_alertable(evaluation):
-    return evaluation.factuality_idx < 0.1 and evaluation.confidence_idx > 0.8
+    return (
+        evaluation.factuality_idx < 0.1
+        and evaluation.consequential_idx > 0.1
+        and evaluation.confidence_idx > 0.8
+    )
 
 
 def initialize_deepgram_connection():
@@ -88,9 +99,8 @@ def initialize_deepgram_connection():
             TRANSCRIPTION_EVALUATION_MAP[sentence_id] = data
             TRANSCRIPTION_TEXT_MAP[sentence_id] = transcript
 
-            if is_alertable(evaluation):
-                explanation = MISTRAL_EVALUATOR.generate_explanation(text, evaluation)
-                HIGH_ALERT_EXPLANATION_MAP[sentence_id] = explanation
+            # Add task to the queue
+            high_alert_task_queue.put((sentence_id, text, evaluation))
 
     def on_close(this_conn, close_data, **kwargs):
         print("Deepgram connection closed:", close_data)
@@ -134,6 +144,7 @@ sio = socketio.AsyncServer(
 app = FastAPI()
 
 MISTRAL_EVALUATOR = MistralStatementEvaluator("No background info")
+ELEVEN_LABS_SPEECH_GENERATOR = ElevenLabsSpeechGenerator()
 
 
 @app.get("/speaking_state_data_stream")
@@ -178,15 +189,18 @@ async def spoken_language_data_stream(request: Request):
         if not sentence_id:
             return {"error": "sentence_id and text are required"}
 
-        if sentence_id in HIGH_ALERT_EXPLANATION_MAP:
-            explanation = HIGH_ALERT_EXPLANATION_MAP[sentence_id]
+        if sentence_id in HIGH_ALERT_AUDIO_MAP:
+            audio = HIGH_ALERT_AUDIO_MAP[sentence_id]
+            play(audio)
         else:
+            # Do it now!
+            print("Wasn't in the map, generating now...")
             text = TRANSCRIPTION_TEXT_MAP.get(sentence_id)
             evaluation = TRANSCRIPTION_EVALUATION_MAP.get(sentence_id)
             explanation = MISTRAL_EVALUATOR.generate_explanation(text, evaluation)
-            HIGH_ALERT_EXPLANATION_MAP[sentence_id] = explanation
-
-        return {"sentence_id": sentence_id, "explanation": explanation}
+            audio = ELEVEN_LABS_SPEECH_GENERATOR.generate_speech(explanation)
+            HIGH_ALERT_AUDIO_MAP[sentence_id] = audio
+            play(audio)
 
 
 ###############################################################################
@@ -224,6 +238,26 @@ async def disconnect(sid):
 ###############################################################################
 # This wraps our FastAPI app with Socket.IO's ASGIApp
 socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
+
+
+def process_high_alert_task_queue():
+    while True:
+        sentence_id, text, evaluation = high_alert_task_queue.get()
+        if is_alertable(evaluation):
+            print(f"Processing high alert task queue item for text: {text}")
+            explanation = MISTRAL_EVALUATOR.generate_explanation(text, evaluation)
+
+            # Generate an audio file with that explanation and save it to the global state.
+            audio = ELEVEN_LABS_SPEECH_GENERATOR.generate_speech(explanation)
+            HIGH_ALERT_AUDIO_MAP[sentence_id] = audio
+
+            print(f"Finished processing high alert for text: {text}")
+
+        high_alert_task_queue.task_done()
+
+
+# Start a thread to process the task queue
+threading.Thread(target=process_high_alert_task_queue, daemon=True).start()
 
 ###############################################################################
 # LAUNCH INSTRUCTIONS
