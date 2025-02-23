@@ -43,7 +43,7 @@ dg_connection = None
 # If the transcript is worth alerting, then add it to the global state to be explained,
 # and then generate an eleven labs audio file.
 def is_alertable(evaluation):
-    return evaluation.factuality_idx == "Low" and evaluation.confidence_idx == "High"
+    return evaluation.factuality_idx < 0.1 and evaluation.confidence_idx > 0.8
 
 
 def initialize_deepgram_connection():

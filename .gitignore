@@ -1,3 +1,4 @@
 
 .env
 *.cpython*
+__pycache__
