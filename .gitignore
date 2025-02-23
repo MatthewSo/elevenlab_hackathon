@@ -2,3 +2,9 @@
 .env
 *.cpython*
 __pycache__/*
+
+# Ignore all Python bytecode files
+*.pyc
+
+# Ignore all __pycache__ directories
+**/__pycache__/
