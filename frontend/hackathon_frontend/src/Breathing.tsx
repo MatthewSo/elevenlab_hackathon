@@ -8,7 +8,6 @@ type SpeakingState = {
 
 async function* streamingFetch(url: RequestInfo, init?: RequestInit): AsyncGenerator<string> {
   const response = await fetch(url, init);
-  console.log(response)
   if (!response.body) return; // Exit if no stream is available
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8');

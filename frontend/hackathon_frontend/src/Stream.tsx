@@ -9,14 +9,13 @@ type SentenceData = {
     controversial_idx: string;
     confidence_idx: string;
     timestamp: number;
-    alert: boolean;
     speaker: string;
+    alert: boolean;
 }
 
 // Asynchronous generator function that yields decoded data chunks
 async function* streamingFetch(url: RequestInfo, init?: RequestInit): AsyncGenerator<string> {
   const response = await fetch(url, init);
-  console.log(response)
   if (!response.body) return; // Exit if no stream is available
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8');
@@ -54,6 +53,7 @@ const StreamComponent: React.FC = () => {
           if (!match || !match[1]) throw new Error("match not found for JSON parse")
 
           const sentence: SentenceData = JSON.parse(match[1]);
+          console.log(sentence)
           setData(prev => [...prev, sentence]);
         }
       } catch (error) {
@@ -78,7 +78,10 @@ const StreamComponent: React.FC = () => {
             <div ref={listRef} className="hide-scrollbar bg-[#E6FFDE] rounded-3xl p-4 w-1/2 h-[90%] overflow-y-auto pb-12">
                 {data.map(s => {
                         return (
-                            <span className="inline text-xl" key={s.sentence_id} style={{ color: s.alert ? "#FFF00" : "#000000" }}> &nbsp; </span>
+                          <>
+                            <span className="inline text-xl" key={`${Math.random()  * 10000}`} style={{ color: s.alert ? "#FF00FF" : "#000000" }}> { s.sentence_text } </span> 
+                            <br />
+                          </>
                         )
                 })}
             </div>
