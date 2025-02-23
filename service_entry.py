@@ -4,6 +4,7 @@ import time
 import json
 from dataclasses import asdict
 from backend.llm.mistral_statement_evaluator import MistralStatementEvaluator
+from backend.models.speaking_state_data import SpeakingStateData
 from backend.stream_generators.speaking_state_stream import stream_speaking_state_data
 from backend.voice.elevenlabs_speech_generator import ElevenLabsSpeechGenerator
 from elevenlabs import play
@@ -30,6 +31,7 @@ TRANSCRIPTION_GLOBAL_STATE = []
 HIGH_ALERT_AUDIO_MAP = {}
 TRANSCRIPTION_EVALUATION_MAP = {}
 TRANSCRIPTION_TEXT_MAP = {}
+SPEAKER_GLOBAL_STATE = []
 
 ###############################################################################
 # DEEPGRAM SETUP
@@ -181,9 +183,20 @@ async def speaking_language_data_stream(request: Request):
     Third streaming endpoint. Sends structured JSON data (from a dataclass)
     every 5 seconds.
     """
-    return StreamingResponse(
-        stream_speaking_state_data(), media_type="text/event-stream"
-    )
+    async def event_generator():
+        idx = 0
+        while True:
+            if idx < len(SPEAKER_GLOBAL_STATE):
+                data = SPEAKER_GLOBAL_STATE[idx]
+                idx += 1
+
+                json_str = json.dumps(asdict(data))
+                yield f"data: {json_str}\n\n"
+            else:
+                # No new data yet, wait a bit
+                await asyncio.sleep(0.2)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.get("/spoken_language_data_stream")
@@ -227,11 +240,13 @@ async def spoken_language_data_stream(request: Request):
             evaluation = TRANSCRIPTION_EVALUATION_MAP.get(sentence_id)
             explanation = MISTRAL_EVALUATOR.generate_explanation(text, evaluation)
             audio = ELEVEN_LABS_SPEECH_GENERATOR.generate_speech(explanation)
+            SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="True", is_listening="False", color="red", is_moving="True", timestamp=time.time()))
             HIGH_ALERT_AUDIO_MAP[sentence_id] = audio
             play(audio)
+            SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="False", is_listening="False", color="green", is_moving="False", timestamp=time.time()))
 
 
-###############################################################################
+        ###############################################################################
 # SOCKET.IO EVENT HANDLERS
 ###############################################################################
 @sio.event
