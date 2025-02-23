@@ -4,6 +4,7 @@ import time
 import json
 from dataclasses import asdict
 from backend.llm.mistral_statement_evaluator import MistralStatementEvaluator
+from backend.stream_generators.speaking_state_stream import stream_speaking_state_data
 
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
@@ -22,6 +23,9 @@ from deepgram import (
 # SHARED GLOBAL STATE
 ###############################################################################
 TRANSCRIPTION_GLOBAL_STATE = []
+HIGH_ALERT_EXPLANATION_MAP = {}
+TRANSCRIPTION_EVALUATION_MAP = {}
+TRANSCRIPTION_TEXT_MAP = {}
 
 ###############################################################################
 # DEEPGRAM SETUP
@@ -34,6 +38,12 @@ config = DeepgramClientOptions(
 deepgram = DeepgramClient(API_KEY, config)
 
 dg_connection = None
+
+
+# If the transcript is worth alerting, then add it to the global state to be explained,
+# and then generate an eleven labs audio file.
+def is_alertable(evaluation):
+    return evaluation.factuality_idx == "Low" and evaluation.confidence_idx == "High"
 
 
 def initialize_deepgram_connection():
@@ -51,7 +61,7 @@ def initialize_deepgram_connection():
             print(text)
 
             # Call mistral.
-            evaluation = MISTRAL_EVALUATOR.evaluate_statement(text)
+            evaluation = MISTRAL_EVALUATOR.evaluate_statement(transcript)
 
             # Generate a unique sentence_id by hashing the text
             hash_object = hashlib.sha256(text.encode())
@@ -59,6 +69,8 @@ def initialize_deepgram_connection():
 
             # Use the first 8 characters of the hash as the sentence_id
             idx = sentence_id[:8]
+
+            alert = is_alertable(evaluation)
 
             data = SpokenLanguageData(
                 sentence_id=sentence_id,
@@ -69,16 +81,16 @@ def initialize_deepgram_connection():
                 controversial_idx=evaluation.controversial_idx,
                 confidence_idx=evaluation.confidence_idx,
                 timestamp=time.time(),
+                alert=alert,
             )
             print(data)
             TRANSCRIPTION_GLOBAL_STATE.append(data)
+            TRANSCRIPTION_EVALUATION_MAP[sentence_id] = data
+            TRANSCRIPTION_TEXT_MAP[sentence_id] = transcript
 
-            # TRANSCRIPTION_GLOBAL_STATE.append(
-            #     {
-            #         "speaker": speaker,
-            #         "transcript": transcript,
-            #     }
-            # )
+            if is_alertable(evaluation):
+                explanation = MISTRAL_EVALUATOR.generate_explanation(text, evaluation)
+                HIGH_ALERT_EXPLANATION_MAP[sentence_id] = explanation
 
     def on_close(this_conn, close_data, **kwargs):
         print("Deepgram connection closed:", close_data)
@@ -124,6 +136,17 @@ app = FastAPI()
 MISTRAL_EVALUATOR = MistralStatementEvaluator("No background info")
 
 
+@app.get("/speaking_state_data_stream")
+async def speaking_language_data_stream(request: Request):
+    """
+    Third streaming endpoint. Sends structured JSON data (from a dataclass)
+    every 5 seconds.
+    """
+    return StreamingResponse(
+        stream_speaking_state_data(), media_type="text/event-stream"
+    )
+
+
 @app.get("/spoken_language_data_stream")
 async def spoken_language_data_stream(request: Request):
     """
@@ -146,6 +169,24 @@ async def spoken_language_data_stream(request: Request):
                 await asyncio.sleep(0.3)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+    @app.post("/high_alert_explanation")
+    async def high_alert_explanation(request: Request):
+        data = await request.json()
+        sentence_id = data.get("sentence_id")
+
+        if not sentence_id:
+            return {"error": "sentence_id and text are required"}
+
+        if sentence_id in HIGH_ALERT_EXPLANATION_MAP:
+            explanation = HIGH_ALERT_EXPLANATION_MAP[sentence_id]
+        else:
+            text = TRANSCRIPTION_TEXT_MAP.get(sentence_id)
+            evaluation = TRANSCRIPTION_EVALUATION_MAP.get(sentence_id)
+            explanation = MISTRAL_EVALUATOR.generate_explanation(text, evaluation)
+            HIGH_ALERT_EXPLANATION_MAP[sentence_id] = explanation
+
+        return {"sentence_id": sentence_id, "explanation": explanation}
 
 
 ###############################################################################
@@ -190,7 +231,7 @@ socket_app = socketio.ASGIApp(sio, other_asgi_app=app)
 # You do NOT call `socketio.run()` in this scenario.
 # Instead, you run via uvicorn (or hypercorn) from the command line:
 #
-#   uvicorn my_app:socket_app --host 0.0.0.0 --port 8000 --reload
+#   uvicorn service_entry:socket_app --host 0.0.0.0 --port 8000 --reload
 #
 # (where `my_app` is this file's name without `.py`, and `socket_app` is
 # the ASGI instance defined at the bottom).

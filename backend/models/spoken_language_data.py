@@ -11,3 +11,4 @@ class SpokenLanguageData:
     confidence_idx: str
     timestamp: float
     speaker: str
+    alert: bool

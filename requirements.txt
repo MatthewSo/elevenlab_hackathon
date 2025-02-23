@@ -6,3 +6,4 @@ numpy
 websockets
 deepgram-sdk
 python-dotenv
+python-socketio
