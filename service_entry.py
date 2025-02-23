@@ -188,9 +188,12 @@ async def speaking_language_data_stream(request: Request):
         while True:
             if idx < len(SPEAKER_GLOBAL_STATE):
                 data = SPEAKER_GLOBAL_STATE[idx]
+                SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="True", is_listening="False", color="blue", is_moving="True", timestamp=time.time()))
+
                 idx += 1
 
                 json_str = json.dumps(asdict(data))
+                SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="True", is_listening="False", color="blue", is_moving="False", timestamp=time.time()))
                 yield f"data: {json_str}\n\n"
             else:
                 # No new data yet, wait a bit
@@ -243,7 +246,7 @@ async def spoken_language_data_stream(request: Request):
             SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="True", is_listening="False", color="red", is_moving="True", timestamp=time.time()))
             HIGH_ALERT_AUDIO_MAP[sentence_id] = audio
             play(audio)
-            SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="False", is_listening="False", color="green", is_moving="False", timestamp=time.time()))
+            SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="False", is_listening="False", color="blue", is_moving="False", timestamp=time.time()))
 
 
         ###############################################################################
