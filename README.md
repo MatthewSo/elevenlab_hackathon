@@ -15,3 +15,22 @@ cd into the frontend directory
 
 - npm install
 - npm run dev
+
+## Google cloud stuff
+
+> https://cloud.google.com/sdk/docs/install
+
+gcloud init
+
+gcloud auth application-default login
+
+pip install --upgrade google-cloud-speech
+
+python transcribe_test.py
+
+Tutorials:
+https://cloud.google.com/speech-to-text/docs/transcribe-streaming-audio
+
+(Streaming is not supported)
+https://cloud.google.com/speech-to-text/docs/multiple-voices?hl=en
+

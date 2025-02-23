@@ -1,5 +1,6 @@
 from dataclasses import dataclass, asdict
 
+
 @dataclass
 class SpokenLanguageData:
     sentence_id: str
@@ -9,3 +10,4 @@ class SpokenLanguageData:
     controversial_idx: str
     confidence_idx: str
     timestamp: float
+    speaker: str

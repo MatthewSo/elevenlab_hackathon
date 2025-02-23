@@ -2,3 +2,7 @@ fastapi
 uvicorn
 mistralai
 elevenlabs
+numpy
+websockets
+deepgram-sdk
+python-dotenv
