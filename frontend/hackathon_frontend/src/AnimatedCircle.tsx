@@ -12,7 +12,7 @@ const AnimatedCircle = ({ active, color }: { active: boolean; color: string }) =
     setIsClicked(true);
     setTimeout(() => setIsClicked(false), 1000);
 
-    await fetch('http://localhost:8000/high_alert_explaination', {
+    await fetch('http://localhost:8000/high_alert_explanation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
