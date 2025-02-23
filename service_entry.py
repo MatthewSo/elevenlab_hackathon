@@ -183,17 +183,34 @@ async def speaking_language_data_stream(request: Request):
     Third streaming endpoint. Sends structured JSON data (from a dataclass)
     every 5 seconds.
     """
+
     async def event_generator():
         idx = 0
         while True:
             if idx < len(SPEAKER_GLOBAL_STATE):
                 data = SPEAKER_GLOBAL_STATE[idx]
-                SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="True", is_listening="False", color="blue", is_moving="True", timestamp=time.time()))
+                SPEAKER_GLOBAL_STATE.append(
+                    SpeakingStateData(
+                        is_speaking="True",
+                        is_listening="False",
+                        color="blue",
+                        is_moving="True",
+                        timestamp=time.time(),
+                    )
+                )
 
                 idx += 1
 
                 json_str = json.dumps(asdict(data))
-                SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="True", is_listening="False", color="blue", is_moving="False", timestamp=time.time()))
+                SPEAKER_GLOBAL_STATE.append(
+                    SpeakingStateData(
+                        is_speaking="True",
+                        is_listening="False",
+                        color="blue",
+                        is_moving="False",
+                        timestamp=time.time(),
+                    )
+                )
                 yield f"data: {json_str}\n\n"
             else:
                 # No new data yet, wait a bit
@@ -225,31 +242,40 @@ async def spoken_language_data_stream(request: Request):
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-    @app.post("/high_alert_explanation")
-    async def high_alert_explanation(request: Request):
-        data = await request.json()
-        sentence_id = data.get("sentence_id")
 
-        if not sentence_id:
-            return {"error": "sentence_id and text are required"}
+@app.post("/high_alert_explanation")
+async def high_alert_explanation(request: Request):
+    # data = await request.json()
+    # sentence_id = data.get("sentence_id")
+    print("high alert POST called!")
+    if HIGH_ALERT_AUDIO_MAP:
+        sentence_id, audio = HIGH_ALERT_AUDIO_MAP.popitem()
+        SPEAKER_GLOBAL_STATE.append(
+            SpeakingStateData(
+                is_speaking="True",
+                is_listening="False",
+                color="red",
+                is_moving="True",
+                timestamp=time.time(),
+            )
+        )
+        play(audio)
 
-        if sentence_id in HIGH_ALERT_AUDIO_MAP:
-            audio = HIGH_ALERT_AUDIO_MAP[sentence_id]
-            play(audio)
-        else:
-            # Do it now!
-            print("Wasn't in the map, generating now...")
-            text = TRANSCRIPTION_TEXT_MAP.get(sentence_id)
-            evaluation = TRANSCRIPTION_EVALUATION_MAP.get(sentence_id)
-            explanation = MISTRAL_EVALUATOR.generate_explanation(text, evaluation)
-            audio = ELEVEN_LABS_SPEECH_GENERATOR.generate_speech(explanation)
-            SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="True", is_listening="False", color="red", is_moving="True", timestamp=time.time()))
-            HIGH_ALERT_AUDIO_MAP[sentence_id] = audio
-            play(audio)
-            SPEAKER_GLOBAL_STATE.append(SpeakingStateData(is_speaking="False", is_listening="False", color="blue", is_moving="False", timestamp=time.time()))
+        del HIGH_ALERT_AUDIO_MAP[sentence_id]
+
+        SPEAKER_GLOBAL_STATE.append(
+            SpeakingStateData(
+                is_speaking="False",
+                is_listening="False",
+                color="green",
+                is_moving="False",
+                timestamp=time.time(),
+            )
+        )
+
+    ###############################################################################
 
 
-        ###############################################################################
 # SOCKET.IO EVENT HANDLERS
 ###############################################################################
 @sio.event
@@ -316,3 +342,8 @@ threading.Thread(target=process_high_alert_task_queue, daemon=True).start()
 # (where `my_app` is this file's name without `.py`, and `socket_app` is
 # the ASGI instance defined at the bottom).
 ###############################################################################
+
+
+# curl -X POST http://localhost:8000/high_alert_explanation \
+#      -H "Content-Type: application/json" \
+#      -d '{"sentence_id": "bd51da1ca3ad6328fd1cc5f54c280ddc04c66513f3412b4116de775f4dddff6f"}'
