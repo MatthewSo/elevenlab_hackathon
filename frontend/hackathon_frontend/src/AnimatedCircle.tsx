@@ -2,13 +2,21 @@ import { useState, useEffect } from 'react';
 
 const AnimatedCircle = ({ active }: { active: boolean }) => {
   const [showAnimated, setShowAnimated] = useState(active);
+  const [isClicked, setIsClicked] = useState(false)
 
   useEffect(() => {
       setShowAnimated(active);
   }, [active]);
 
+  const sendPostRequest = () => {
+    setIsClicked(true);
+    setTimeout(() => setIsClicked(false), 1000);
+
+    console.log("sending post request")
+  }
+
   return (
-    <div className="circle-wrapper">
+    <div className="circle-wrapper" onClick={sendPostRequest}>
       <style>{`
         .circle-wrapper {
           position: relative;
@@ -23,18 +31,21 @@ const AnimatedCircle = ({ active }: { active: boolean }) => {
           width: 100%;
           height: 100%;
           border-radius: 50%;
-          background-color: #79BF6A;
+          background-color: #a0c9ed;
           transition: opacity 0.5s ease-in-out;
+          cursor: pointer;
         }
 
         .circle-static {
           transform: scale(0.7);
           opacity: ${showAnimated ? 0 : 1};
+          animation: ${isClicked ? 'colorChange 1s forwards' : 'none'};
         }
 
         .circle-animated {
           opacity: ${showAnimated ? 1 : 0};
-          animation: pulse 1.5s ease-in-out infinite;
+          // animation: pulse 1.5s ease-in-out infinite;
+            animation: ${isClicked ? 'colorChange 1s forwards, pulse 1.5s ease-in-out infinite' : 'pulse 1.5s ease-in-out infinite'};
         }
 
         @keyframes pulse {
@@ -44,6 +55,11 @@ const AnimatedCircle = ({ active }: { active: boolean }) => {
           50% {
             transform: scale(1);
           }
+        }
+          @keyframes colorChange {
+            0% { background-color: #a0c9ed; }
+            50% { background-color:rgb(112, 177, 235); }
+            100% { background-color: #a0c9ed; }
         }
       `}</style>
       

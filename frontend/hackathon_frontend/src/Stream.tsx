@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Breathing } from './Breathing';
+import blue_background from "../public/blue_background.jpg"
 
 type SentenceData = {
     sentence_id: string;
@@ -74,14 +75,22 @@ const StreamComponent: React.FC = () => {
   }, [data]); 
 
     return (
-        <div className="flex flex-row h-screen grid-cols-2 gap-4">
-            <div ref={listRef} className="hide-scrollbar bg-[#E6FFDE] rounded-3xl p-4 w-1/2 h-[90%] overflow-y-auto pb-12">
+        <div className="flex flex-row h-screen grid-cols-2 gap-4 libre-baskerville-regular">
+            <style>{`
+            .divbackg {
+                background-image: url(${blue_background});
+                background-position: bottom;
+
+                }
+            `}</style>
+
+            <div ref={listRef} className="divbackg hide-scrollbar bg-[#E6FFDE] rounded-3xl p-4 w-1/2 h-[90%] overflow-y-auto pb-12">
                 {data.map(s => {
                         return (
-                          <>
-                            <span className="inline text-xl" key={`${Math.random()  * 10000}`} style={{ color: s.alert ? "#FF00FF" : "#000000" }}> { s.sentence_text } </span> 
+                          <div className="w-full text-left" key={`${Math.random() * 100000}`}>
+                            <span className="inline text-xl w-full" key={`${Math.random()  * 10000}`} style={{ backgroundColor: gethighlightColor() }}> { s.sentence_text } </span> 
                             <br />
-                          </>
+                          </div>
                         )
                 })}
             </div>
@@ -93,6 +102,12 @@ const StreamComponent: React.FC = () => {
 };
 
 export default StreamComponent;
+
+const gethighlightColor = () => {
+    return "#89ff6b" // green
+    return "#f8ff6b" // yellow
+    return "#ff7c6b" // red
+}
 
 /*
                 {data.map((sd, index) => (
