@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Breathing } from './Breathing';
 
 type SentenceData = {
@@ -43,6 +43,7 @@ const StreamComponent: React.FC = () => {
   const [charIndex, setCharIndex] = useState(0);
   const [sentIndex, setSentIndex] = useState(0);
   const [data, setData] = useState<SentenceData[]>([]);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (data.length > sentIndex) {
@@ -52,7 +53,7 @@ const StreamComponent: React.FC = () => {
       if (charIndex < text.length) {
         setTimeout(() => {
           setText(t => [...t, { 
-            key: sentance_id + charIndex,
+            key: `${Math.random() * 1000000}:${charIndex}`,
             color,
             char: text[charIndex]
             }]);
@@ -97,17 +98,24 @@ const StreamComponent: React.FC = () => {
     };
   }, []);
 
+
+  useEffect(() => {
+    if (listRef.current) {
+        listRef.current.scrollTop = listRef.current.scrollHeight ;
+      }
+  }, [data]); 
+
     return (
         <div className="flex flex-row h-screen grid-cols-2 gap-4">
-            <div className="hide-scrollbar bg-[#E6FFDE] rounded-3xl p-4 w-1/2 max-h-[90%] overflow-y-auto flex items-end inline">
+            <div ref={listRef} className="hide-scrollbar bg-[#E6FFDE] rounded-3xl p-4 w-1/2 h-[90%] overflow-y-auto pb-12">
                 {text.map(chars => {
                     if (chars.char === " ") {
                         return (
-                            <p className="inline-block" key={chars.key} style={{color: chars.color}}> &nbsp; </p>
+                            <span className="inline text-xl" key={chars.key} style={{ color: chars.color }}> &nbsp; </span>
                         )
                     }
                     return (
-                        <p className="inline-block text-xl tracking-tighter" key={chars.key} style={{color: chars.color}}> { chars.char.replace(/[^\s]/g, "—") } </p>
+                        <span className="inline text-xl tracking-tighter" key={chars.key} style={{ color: chars.color }}> {chars.char.replace(/[^\s]/g, "—")} </span>
                     )
                 })}
             </div>
