@@ -10,6 +10,7 @@ async def stream_speaking_state_data():
         sentence_id += 1
         reading = SpeakingStateData(
             is_speaking = "True" if sentence_id % 2 == 0 else "False",
+            is_listening="True" if sentence_id % 3 == 0 else "False",
             timestamp=time.time()
         )
 
