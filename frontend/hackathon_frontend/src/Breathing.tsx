@@ -3,7 +3,10 @@ import AnimatedCircle from './AnimatedCircle';
 
 type SpeakingState = {
     is_speaking: string
-    timestamp: number
+    is_listening: string
+    color: string
+    is_moving: string
+    timestamp: string
 }
 
 async function* streamingFetch(url: RequestInfo, init?: RequestInit): AsyncGenerator<string> {
