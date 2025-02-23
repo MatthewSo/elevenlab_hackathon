@@ -102,9 +102,10 @@ You evaluated the statement as follows:
 - Controversiality: {evaluation.controversial_idx}
 - Confidence: {evaluation.confidence_idx}
 '''
-    context = '''
+    context += '''
 Your explanation must be raw text. DO NOT INCLUDE STRING CHARACTERS OUTSIDE OF THE TEXT.
 Your response should be no longer than 2 sentences.
+Provide your answer now.
     '''
     return context
 
