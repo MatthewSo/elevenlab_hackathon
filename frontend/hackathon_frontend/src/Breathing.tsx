@@ -58,5 +58,6 @@ export const Breathing = () => {
       isCancelled = true;
     };
   }, []);
+
     return <AnimatedCircle active={isBreathing} />
 }

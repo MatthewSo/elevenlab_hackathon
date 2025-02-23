@@ -8,11 +8,17 @@ const AnimatedCircle = ({ active }: { active: boolean }) => {
       setShowAnimated(active);
   }, [active]);
 
-  const sendPostRequest = () => {
+  const sendPostRequest = async () => {
     setIsClicked(true);
     setTimeout(() => setIsClicked(false), 1000);
 
-    console.log("sending post request")
+    await fetch('http://localhost:8000/high_alert_explaination', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
   }
 
   return (
