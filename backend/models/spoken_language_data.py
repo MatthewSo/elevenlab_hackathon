@@ -12,3 +12,4 @@ class SpokenLanguageData:
     timestamp: float
     speaker: str
     alert: bool
+    color: str

@@ -13,8 +13,8 @@ from backend.models.spoken_language_data import SpokenLanguageData
 import hashlib
 import threading
 from queue import Queue
-
-
+from backend.models.speaking_state_data import SpeakingStateData
+from dataclasses import dataclass
 import socketio  # pip install "python-socketio[asgi]"
 from deepgram import (
     DeepgramClient,
@@ -57,6 +57,32 @@ def is_alertable(evaluation):
     )
 
 
+def is_warning(evaluation):
+    return (
+        evaluation.factuality_idx < 0.5
+        and evaluation.consequential_idx > 0.3
+        and evaluation.confidence_idx > 0.8
+    )
+
+
+def is_good(evaluation):
+    return (
+        evaluation.factuality_idx > 0.9
+        # and evaluation.consequential_idx < 0.3
+        and evaluation.confidence_idx > 0.8
+    )
+
+
+def get_color(evaluation):
+    if is_alertable(evaluation):
+        return "red"
+    if is_warning(evaluation):
+        return "yellow"
+    if is_good(evaluation):
+        return "green"
+    return "black"
+
+
 def initialize_deepgram_connection():
     global dg_connection
     dg_connection = deepgram.listen.live.v("1")
@@ -82,6 +108,7 @@ def initialize_deepgram_connection():
             idx = sentence_id[:8]
 
             alert = is_alertable(evaluation)
+            color = get_color(evaluation)
 
             data = SpokenLanguageData(
                 sentence_id=sentence_id,
@@ -93,6 +120,7 @@ def initialize_deepgram_connection():
                 confidence_idx=evaluation.confidence_idx,
                 timestamp=time.time(),
                 alert=alert,
+                color=color,
             )
             print(data)
             TRANSCRIPTION_GLOBAL_STATE.append(data)
