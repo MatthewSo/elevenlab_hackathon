@@ -1,3 +1,6 @@
+from backend.llm.interface.statement_evaluator import StatementEvaluation
+
+
 def get_evaluation_context(background_info: str, statement: str):
     context =  '''
 You are an intelligent system that must evaluate how correct/true facts are based on a given background of knowledge.
@@ -99,5 +102,9 @@ You evaluated the statement as follows:
 - Controversiality: {evaluation.controversial_idx}
 - Confidence: {evaluation.confidence_idx}
 '''
+    context = '''
+Your explanation must be raw text. DO NOT INCLUDE STRING CHARACTERS OUTSIDE OF THE TEXT.
+Your response should be no longer than 2 sentences.
+    '''
     return context
 
